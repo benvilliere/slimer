@@ -45,18 +45,16 @@ def generate_output_for_file(item, item_path, depth, limit):
     if is_binary_file(item):
         return f"{'  ' * depth}-- {item}:\n[Binary File]\n"
     
-    try:
-        content, truncated = read_file_content(item_path, limit)
-        language = constants.FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
-        return (
-            f"{spacer}\n"
-            f"```{language}\n"
-            f"{content}"
-            f"{'...[more content...]' if truncated else ''}\n"
-            f"```\n"
-        )
-    except UnicodeDecodeError:
-        return f"{spacer} [Binary File]\n"
+    # No try-except block here, directly reading the content
+    content, truncated = read_file_content(item_path, limit)
+    language = constants.FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
+    return (
+        f"{spacer}\n"
+        f"```{language}\n"
+        f"{content}"
+        f"{'...[more content...]' if truncated else ''}\n"
+        f"```\n"
+    )
 
 def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, excluded_items=None, tree_only=False, include_binary=False):
     """
@@ -137,6 +135,8 @@ def parse_arguments():
     parser.add_argument('-t', '--tree', action="store_true", help="Only display the folder structure without file content.")
     parser.add_argument('-p', '--prepend', type=str, default="", help="String to prepend at the beginning of the output.")
     parser.add_argument('-a', '--append', type=str, default="", help="String to append at the end of the output.")
+    parser.add_argument('-o', '--output', type=str, default=None, 
+        help="Path to a file where the output will be written. If not provided, prints to console.")
     return parser.parse_args()
 
 def get_directory_output(args, absolute_path):
@@ -201,15 +201,19 @@ def process_directory(args, absolute_path):
     """
     return get_directory_output(args, absolute_path)
 
-def handle_output(output, copy_to_clipboard):
+def handle_output(output, copy_to_clipboard, output_file=None):
     """
-    Handles the output, either by printing it or copying it to clipboard.
+    Handles the output, either by printing it, copying it to clipboard, or writing to an output file.
 
     Args:
     - output (str): The string to be output.
     - copy_to_clipboard (bool): Whether to copy the output to clipboard.
+    - output_file (str): Path to the file where the output will be written.
     """
-    if copy_to_clipboard:
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as file:
+            file.write(output)
+    elif copy_to_clipboard:
         pyperclip.copy(output)
     else:
         print(output)
@@ -221,7 +225,7 @@ def main():
     try:
         args, absolute_path = handle_arguments()
         output = process_directory(args, absolute_path)
-        handle_output(output, args.copy)
+        handle_output(output, args.copy, args.output)
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
 
