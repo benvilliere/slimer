@@ -9,7 +9,6 @@ DEFAULT_EXCLUDED_FILES = ['.gitattributes', '.gitignore', 'LICENSE', 'README.md'
 def display_files_in_directory(directory, depth=0, limit=500, depth_limit=None, excluded_items=[]):
     output = ""
 
-    # Stop if we've reached or exceeded the depth limit
     if depth_limit is not None and depth >= depth_limit:
         return ""
 
@@ -53,6 +52,8 @@ def main():
         help="Maximum depth to explore in the directory structure.")
     parser.add_argument('-e', '--exclude', type=str, default="", 
         help="Comma separated list of files or directories to exclude.")
+    parser.add_argument('-i', '--include', type=str, default="", 
+        help="Comma separated list of files or directories to forcefully include even if they are in the exclude list.")
     
     args = parser.parse_args()
 
@@ -60,6 +61,9 @@ def main():
     excluded_items = DEFAULT_EXCLUDED_FILES + DEFAULT_EXCLUDED_DIRECTORIES
     if args.exclude:
         excluded_items += args.exclude.split(",")
+    if args.include:
+        included_items = args.include.split(",")
+        excluded_items = [item for item in excluded_items if item not in included_items]
 
     absolute_path = os.path.abspath(args.path)
 
