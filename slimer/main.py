@@ -1,3 +1,35 @@
+"""
+Slimer: Directory and File Content Display Tool
+
+This script provides a tool to visualize the directory structure along with the content
+of the files within the specified directory. Users can utilize various command-line arguments
+to customize the output. Some of the primary functionalities include:
+
+- Display directory structures in a tree-like format.
+- Show the content of files in the structure with an optional character limit.
+- Exclude or forcefully include specific files or directories.
+- Recognize and tag binary files, with an option to include/exclude them.
+- Limit the depth of directory exploration.
+- Copy the result to the clipboard or output to a file.
+- Filter the displayed files based on their modification time.
+
+Usage:
+    Run the script with python and provide the necessary arguments. 
+    Use the `-h` or `--help` option for more details on available command-line arguments.
+
+Dependencies:
+    - pyperclip: Used for copying output to clipboard.
+
+Example:
+    $ python main.py /path/to/directory -c -m 500 -e __pycache__ temp
+
+Author:
+    Ben Villiere
+
+Date:
+    03/10/2023
+"""
+
 import argparse
 import os
 import pyperclip
