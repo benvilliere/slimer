@@ -187,7 +187,6 @@ def handle_arguments():
 
     return args, absolute_path
 
-
 def process_directory(args, absolute_path):
     """
     Processes the directory based on provided arguments.
