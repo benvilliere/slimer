@@ -1,7 +1,15 @@
+EXCLUDED_DIRECTORIES = [
+  'node_modules', 
+  '.git',
+  '__pycache__'
+]
 
-DEFAULT_EXCLUDED_DIRECTORIES = ['node_modules', '.git', '__pycache__']
-
-DEFAULT_EXCLUDED_FILES = ['.gitattributes', '.gitignore', 'LICENSE', 'README.md']
+EXCLUDED_FILES = [
+  '.gitattributes',
+  '.gitignore',
+  'LICENSE',
+  'README.md'
+]
 
 BINARY_FILE_EXTENSIONS = [
     '.exe', '.dll', '.bin', '.o', '.a', '.lib', 

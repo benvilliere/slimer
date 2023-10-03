@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="shufti",
+    name="slimer",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
@@ -9,14 +9,14 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "shufti=shufti.main:main",
+            "slimer=slimer.main:main",
         ],
     },
     author="Ben Villiere",
     description="A CLI tool to give a copy pasteable glance at your project structure and code.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/benvilliere/shufti",
+    url="https://github.com/benvilliere/slimer",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
