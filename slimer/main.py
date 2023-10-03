@@ -8,23 +8,39 @@ def is_binary_file(filename):
     _, ext = os.path.splitext(filename)
     return ext in constants.BINARY_FILE_EXTENSIONS
 
-def read_file_content(item_path, limit=None):
+def read_file_content(item_path, limit=None, chunk_size=4096):
     """
-    Read the content of a file up to a given limit.
+    Read the content of a file up to a given limit using chunks.
     
     Args:
     - item_path (str): Path to the file.
     - limit (int, optional): Maximum number of characters to read. Reads the entire file if not provided.
+    - chunk_size (int, optional): Size of each chunk to be read from the file.
     
     Returns:
     - tuple: The content of the file and a flag indicating if the content was truncated.
     """
+    content = []
+    truncated = False
+
     with open(item_path, 'r', encoding='utf-8', errors='replace') as file:
-        content = []
-        while (line := file.readline()) and (not limit or file.tell() <= limit):
-            content.append(line)
-        truncated = bool(limit) and file.tell() > limit
-        return ''.join(content), truncated
+        bytes_read = 0
+        while not limit or bytes_read < limit:
+            if limit:
+                chunk = file.read(min(chunk_size, limit - bytes_read))
+            else:
+                chunk = file.read(chunk_size)
+
+            if not chunk:
+                break
+
+            content.append(chunk)
+            bytes_read += len(chunk.encode('utf-8'))  # considering bytes and not just characters
+
+        truncated = bool(limit) and file.read(1)  # Check if there is more content left
+
+    return ''.join(content), truncated
+
 
 def generate_output_for_file(item, item_path, depth, limit):
     """
