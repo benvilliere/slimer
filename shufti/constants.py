@@ -1,6 +1,8 @@
 
 DEFAULT_EXCLUDED_DIRECTORIES = ['node_modules', '.git', '__pycache__']
+
 DEFAULT_EXCLUDED_FILES = ['.gitattributes', '.gitignore', 'LICENSE', 'README.md']
+
 BINARY_FILE_EXTENSIONS = [
     '.exe', '.dll', '.bin', '.o', '.a', '.lib', 
     '.so', '.dylib', '.bmp', '.gif', '.jpg', '.jpeg', 
@@ -9,6 +11,7 @@ BINARY_FILE_EXTENSIONS = [
     '.rar', '.pdf', '.doc', '.docx', '.xls', '.xlsx', 
     '.ppt', '.pptx', '.odt', '.ods'
 ]
+
 FILE_EXTENSION_MAPPINGS = {
     '.py': 'python',
     '.ts': 'typescript',
