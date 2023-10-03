@@ -3,10 +3,10 @@ import os
 import pyperclip
 from file_extension_mappings import FILE_EXTENSION_MAPPINGS
 
-IGNORED_DIRECTORIES = ['node_modules', '.git', '__pycache__']
-IGNORED_FILES = ['.gitattributes', '.gitignore', 'LICENSE', 'README.md']
+DEFAULT_IGNORED_DIRECTORIES = ['node_modules', '.git', '__pycache__']
+DEFAULT_IGNORED_FILES = ['.gitattributes', '.gitignore', 'LICENSE', 'README.md']
 
-def display_files_in_directory(directory, depth=0, limit=500, depth_limit=None):
+def display_files_in_directory(directory, depth=0, limit=500, depth_limit=None, ignored_dirs=[], ignored_files=[]):
     output = ""
 
     # Stop if we've reached or exceeded the depth limit
@@ -14,15 +14,19 @@ def display_files_in_directory(directory, depth=0, limit=500, depth_limit=None):
         return ""
 
     for item in os.listdir(directory):
-        item_path = os.path.join(directory, item)
+        item_path = os.path.abspath(os.path.join(directory, item))
 
-        # Skip ignored directories and files
-        if item in IGNORED_DIRECTORIES or (os.path.isfile(item_path) and item in IGNORED_FILES):
+        # Check if the directory or file should be ignored.
+        if os.path.isdir(item_path) and item in ignored_dirs:
             continue
+        elif os.path.isfile(item_path) and item_path in ignored_files:
+            continue
+
+        print(item_path)
 
         if os.path.isdir(item_path):
             output += "  " * depth + f"/{item}:\n"
-            output += display_files_in_directory(item_path, depth+1, limit, depth_limit)
+            output += display_files_in_directory(item_path, depth+1, limit, depth_limit, ignored_dirs, ignored_files)
         else:
             with open(item_path, 'r') as file:
                 content = file.read() if limit is None else file.read(limit + 1)
@@ -52,10 +56,19 @@ def main():
         help="Maximum number of characters to display from each file. No limit by default.")
     parser.add_argument('-d', '--depth', type=int, 
         help="Maximum depth to explore in the directory structure.")
+    parser.add_argument('--ignored-dirs', type=str, default="", 
+        help="Comma separated list of directories to ignore.")
+    parser.add_argument('--ignored-files', type=str, default="", 
+        help="Comma separated list of files to ignore.")
+    
     args = parser.parse_args()
 
+    # Note: Make paths absolute right from the start.
+    ignored_dirs = DEFAULT_IGNORED_DIRECTORIES + args.ignored_dirs.split(",") if args.ignored_dirs else DEFAULT_IGNORED_DIRECTORIES
+    ignored_files = [os.path.abspath(os.path.join(os.getcwd(), f)) for f in (DEFAULT_IGNORED_FILES + args.ignored_files.split(","))] if args.ignored_files else [os.path.abspath(os.path.join(os.getcwd(), f)) for f in DEFAULT_IGNORED_FILES]
+
     if os.path.exists(args.path):
-        output = display_files_in_directory(args.path, limit=args.limit, depth_limit=args.depth)
+        output = display_files_in_directory(args.path, limit=args.limit, depth_limit=args.depth, ignored_dirs=ignored_dirs, ignored_files=ignored_files)
         if args.copy:
             pyperclip.copy(output)
         else:
