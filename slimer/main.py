@@ -39,6 +39,9 @@ def generate_output_for_file(item, item_path, depth, limit):
     Returns:
     - str: Formatted output string for the file.
     """
+    # Use f-string alignment to ensure uniform width for file names
+    spacer = f"{'  ' * depth}-- {item:<40}"
+
     if is_binary_file(item):
         return f"{'  ' * depth}-- {item}:\n[Binary File]\n"
     
@@ -46,14 +49,14 @@ def generate_output_for_file(item, item_path, depth, limit):
         content, truncated = read_file_content(item_path, limit)
         language = constants.FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
         return (
-            f"{'  ' * depth}-- {item}:\n"
+            f"{spacer}\n"
             f"```{language}\n"
             f"{content}"
             f"{'...[more content...]' if truncated else ''}\n"
             f"```\n"
         )
     except UnicodeDecodeError:
-        return f"{'  ' * depth}-- {item}:\n[Binary File]\n"
+        return f"{spacer} [Binary File]\n"
 
 def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, excluded_items=None, tree_only=False, include_binary=False):
     """
@@ -83,13 +86,13 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
         if item in excluded_items:
             continue
 
-        item_path = os.path.abspath(os.path.join(directory, item))
-
+        item_path = os.path.join(directory, item) 
+        
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
             output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only, include_binary)
         elif tree_only:
-            output += f"{'  ' * depth}-- {item}\n"
+            output += f"{'  ' * depth}-- {item:<40}\n" 
         else:
             if not include_binary and is_binary_file(item):
                 continue
