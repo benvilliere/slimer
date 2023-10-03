@@ -1,6 +1,8 @@
 import argparse
 import os
 import pyperclip
+import time
+
 import constants
 
 def is_binary_file(filename):
@@ -72,7 +74,9 @@ def generate_output_for_file(item, item_path, depth, limit):
         f"```\n"
     )
 
-def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, excluded_items=None, tree_only=False, include_binary=False):
+def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, 
+                               excluded_items=None, tree_only=False, 
+                               include_binary=False, recent_minutes=None):
     """
     Display the directory structure and file content recursively.
 
@@ -84,6 +88,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     - excluded_items (list, optional): List of filenames or directory names to exclude.
     - tree_only (bool, optional): If True, only the directory structure is displayed.
     - include_binary (bool, optional): If True, binary files are included with a flag.
+    - recent_minutes (int, optional): Only display files modified within the last N minutes.
 
     Returns:
     - str: Formatted string of the directory structure and file content.
@@ -100,11 +105,19 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
         if item in excluded_items:
             continue
 
-        item_path = os.path.join(directory, item) 
+        item_path = os.path.join(directory, item)
+
+        # If the recent_minutes argument is used, check the file modification time.
+        if recent_minutes is not None:
+            file_mod_time = os.path.getmtime(item_path)
+            current_time = time.time()
+            seconds_in_a_minute = 60
+            if current_time - file_mod_time > recent_minutes * seconds_in_a_minute:
+                continue  # Skip this file if it wasn't modified within the recent_minutes timeframe
         
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
-            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only, include_binary)
+            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only, include_binary, recent_minutes)
         elif tree_only:
             output += f"{'  ' * depth}-- {item:<40}\n" 
         else:
@@ -113,6 +126,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
             output += generate_output_for_file(item, item_path, depth, limit)
 
     return output
+
 
 def get_excluded_items(args):
     """
@@ -153,6 +167,8 @@ def parse_arguments():
     parser.add_argument('-a', '--append', type=str, default="", help="String to append at the end of the output.")
     parser.add_argument('-o', '--output', type=str, default=None, 
         help="Path to a file where the output will be written. If not provided, prints to console.")
+    parser.add_argument('-r', '--recent', type=int, default=None, 
+        help="Only display files modified within the last N minutes. Defaults to 10 minutes if no value provided.")
     return parser.parse_args()
 
 def get_directory_output(args, absolute_path):
@@ -179,7 +195,8 @@ def get_directory_output(args, absolute_path):
         depth_limit=args.depth, 
         excluded_items=excluded_items, 
         tree_only=args.tree,
-        include_binary=args.binary  # Pass the binary inclusion flag here
+        include_binary=args.binary,  
+        recent_minutes=args.recent
     ))
 
     if args.append:
