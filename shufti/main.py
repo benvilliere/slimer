@@ -1,21 +1,10 @@
 import argparse
 import os
 import pyperclip
-from file_extension_mappings import FILE_EXTENSION_MAPPINGS
-
-DEFAULT_EXCLUDED_DIRECTORIES = ['node_modules', '.git', '__pycache__']
-DEFAULT_EXCLUDED_FILES = ['.gitattributes', '.gitignore', 'LICENSE', 'README.md']
-BINARY_FILE_EXTENSIONS = [
-    '.exe', '.dll', '.bin', '.o', '.a', '.lib', 
-    '.so', '.dylib', '.bmp', '.gif', '.jpg', '.jpeg', 
-    '.png', '.webp', '.mp3', '.wav', '.ogg', '.mp4', 
-    '.webm', '.zip', '.tar', '.gz', '.bz2', '.7z', 
-    '.rar', '.pdf', '.doc', '.docx', '.xls', '.xlsx', 
-    '.ppt', '.pptx', '.odt', '.ods'
-]
+import constants
 
 def is_binary_file(filename):
-    return os.path.splitext(filename)[1] in BINARY_FILE_EXTENSIONS
+    return os.path.splitext(filename)[1] in constants.BINARY_FILE_EXTENSIONS
 
 def display_files_in_directory(directory, depth=0, limit=500, depth_limit=None, excluded_items=[], included_items=[], include_binary=False):
     output = ""
@@ -49,7 +38,7 @@ def display_files_in_directory(directory, depth=0, limit=500, depth_limit=None, 
 
                         file_output = "  " * depth + f"-- {item}:\n"
                         if content:
-                            language = FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
+                            language = constants.FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
                             file_output += (
                                 "```" + language + "\n" +
                                 content +
@@ -83,14 +72,14 @@ def main():
     
     args = parser.parse_args()
 
-    excluded_items = DEFAULT_EXCLUDED_FILES + DEFAULT_EXCLUDED_DIRECTORIES
+    excluded_items = constants.DEFAULT_EXCLUDED_FILES + constants.DEFAULT_EXCLUDED_DIRECTORIES
     if args.exclude:
         excluded_items += args.exclude.split(",")
     if args.include:
         included_items = args.include.split(",")
         excluded_items = [item for item in excluded_items if item not in included_items]
     if not args.binary:
-        excluded_items += [f for f in BINARY_FILE_EXTENSIONS]
+        excluded_items += [f for f in constants.BINARY_FILE_EXTENSIONS]
 
     absolute_path = os.path.abspath(args.path)
 
