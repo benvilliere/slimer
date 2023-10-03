@@ -72,7 +72,7 @@ def main():
     
     args = parser.parse_args()
 
-    excluded_items = constants.DEFAULT_EXCLUDED_FILES + constants.DEFAULT_EXCLUDED_DIRECTORIES
+    excluded_items = constants.EXCLUDED_FILES + constants.EXCLUDED_DIRECTORIES
     if args.exclude:
         excluded_items += args.exclude.split(",")
     if args.include:
