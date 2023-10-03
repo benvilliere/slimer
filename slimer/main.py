@@ -55,7 +55,7 @@ def generate_output_for_file(item, item_path, depth, limit):
     except UnicodeDecodeError:
         return f"{'  ' * depth}-- {item}:\n[Binary File]\n"
 
-def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, excluded_items=None, tree_only=False):
+def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, excluded_items=None, tree_only=False, include_binary=False):
     """
     Display the directory structure and file content recursively.
 
@@ -66,6 +66,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     - depth_limit (int, optional): Maximum depth to explore in the directory structure.
     - excluded_items (list, optional): List of filenames or directory names to exclude.
     - tree_only (bool, optional): If True, only the directory structure is displayed.
+    - include_binary (bool, optional): If True, binary files are included with a flag.
 
     Returns:
     - str: Formatted string of the directory structure and file content.
@@ -86,10 +87,12 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
 
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
-            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only)
+            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only, include_binary)
         elif tree_only:
             output += f"{'  ' * depth}-- {item}\n"
         else:
+            if not include_binary and is_binary_file(item):
+                continue
             output += generate_output_for_file(item, item_path, depth, limit)
 
     return output
@@ -145,9 +148,6 @@ def get_directory_output(args, absolute_path):
     - str: Formatted string of the directory structure and content.
     """
     excluded_items = get_excluded_items(args)
-    
-    if not args.binary:
-        excluded_items.update([item for item in os.listdir(absolute_path) if is_binary_file(item)])
 
     output_parts = []
 
@@ -159,7 +159,8 @@ def get_directory_output(args, absolute_path):
         limit=args.limit, 
         depth_limit=args.depth, 
         excluded_items=excluded_items, 
-        tree_only=args.tree
+        tree_only=args.tree,
+        include_binary=args.binary  # Pass the binary inclusion flag here
     ))
 
     if args.append:
