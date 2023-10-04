@@ -12,6 +12,7 @@ to customize the output. Some of the primary functionalities include:
 - Limit the depth of directory exploration.
 - Copy the result to the clipboard or output to a file.
 - Filter the displayed files based on their modification time.
+- Influce specific files based on their extension.
 
 Usage:
     Run the script with python and provide the necessary arguments. 
@@ -106,9 +107,13 @@ def generate_output_for_file(item, item_path, depth, limit):
         f"```\n"
     )
 
+def get_file_extension(file): 
+    return os.path.splitext(file)[1]
+
 def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, 
                                excluded_items=None, tree_only=False, 
-                               include_binary=False, recent_minutes=None):
+                               include_binary=False, recent_minutes=None,
+                               file_extensions=None):
     """
     Display the directory structure and file content recursively.
 
@@ -121,6 +126,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     - tree_only (bool, optional): If True, only the directory structure is displayed.
     - include_binary (bool, optional): If True, binary files are included with a flag.
     - recent_minutes (int, optional): Only display files modified within the last N minutes.
+    - file_extensions (list, optional): List of file extensions to exclusively display.
 
     Returns:
     - str: Formatted string of the directory structure and file content.
@@ -149,10 +155,12 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
         
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
-            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only, include_binary, recent_minutes)
+            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only, include_binary, recent_minutes, file_extensions)
         elif tree_only:
             output += f"{'  ' * depth}-- {item:<40}\n" 
         else:
+            if file_extensions and get_file_extension(item) not in file_extensions:
+                continue
             if not include_binary and is_binary_file(item):
                 continue
             output += generate_output_for_file(item, item_path, depth, limit)
@@ -201,6 +209,8 @@ def parse_arguments():
         help="Path to a file where the output will be written. If not provided, prints to console.")
     parser.add_argument('-r', '--recent', type=int, default=None, 
         help="Only display files modified within the last N minutes. Defaults to 10 minutes if no value provided.")
+    parser.add_argument('-f', '--file-extensions', nargs='*', default=[], 
+        help="List of file extensions to exclusively display (e.g. .py .ts).")
     return parser.parse_args()
 
 def get_directory_output(args, absolute_path):
@@ -228,7 +238,8 @@ def get_directory_output(args, absolute_path):
         excluded_items=excluded_items, 
         tree_only=args.tree,
         include_binary=args.binary,  
-        recent_minutes=args.recent
+        recent_minutes=args.recent,
+        file_extensions=args.file_extensions
     ))
 
     if args.append:
