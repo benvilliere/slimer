@@ -38,7 +38,7 @@ import pyperclip
 import re
 import time
 
-from slimer.constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS
+from slimer.constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS, SINGLE_LINE_COMMENT_PATTERNS, MULTI_LINE_COMMENT_PATTERNS
 from slimer.__version__ import __version__
 
 def is_binary_file(filename):
@@ -110,55 +110,13 @@ def remove_comments(code, language):
     TypeScript, Java, C, C++, and others. If a language is not supported, the original code 
     will be returned without any modifications.
     """
-    single_line_patterns = {
-        'python': r'(?m)^\s*#.*?$',
-        'ruby': r'(?m)^\s*#.*?$',
-        'perl': r'(?m)^\s*#.*?$',
-        'bash': r'(?m)^\s*#.*?$',
-        'powershell': r'(?m)^\s*#.*?$',
-        'r': r'(?m)^\s*#.*?$',
-        'javascript': r'(?m)^\s*//.*?$',
-        'typescript': r'(?m)^\s*//.*?$',
-        'java': r'(?m)^\s*//.*?$',
-        'c': r'(?m)^\s*//.*?$',
-        'cpp': r'(?m)^\s*//.*?$',
-        'csharp': r'(?m)^\s*//.*?$',
-        'rust': r'(?m)^\s*//.*?$',
-        'go': r'(?m)^\s*//.*?$',
-        'php': r'(?m)^\s*//.*?$',
-        'swift': r'(?m)^\s*//.*?$',
-        'kotlin': r'(?m)^\s*//.*?$',
-        'dart': r'(?m)^\s*//.*?$',
-        'groovy': r'(?m)^\s*//.*?$',
-        'sql': r'(?m)^\s*--.*?$'
-    }
-
-    multi_line_patterns = {
-        'python': r'''(\'\'\'.*?\'\'\'|\"\"\".*?\"\"\")''',
-        'javascript': r'/\*.*?\*/',
-        'typescript': r'/\*.*?\*/',
-        'java': r'/\*.*?\*/',
-        'c': r'/\*.*?\*/',
-        'cpp': r'/\*.*?\*/',
-        'csharp': r'/\*.*?\*/',
-        'rust': r'/\*.*?\*/',
-        'go': r'/\*.*?\*/',
-        'php': r'/\*.*?\*/',
-        'swift': r'/\*.*?\*/',
-        'kotlin': r'/\*.*?\*/',
-        'dart': r'/\*.*?\*/',
-        'groovy': r'/\*.*?\*/'
-    }
-    
-    # Directly fetch the pattern for the provided language and remove comments
-    single_line_pattern = single_line_patterns.get(language, '')
-    multi_line_pattern = multi_line_patterns.get(language, '')
+    single_line_pattern = SINGLE_LINE_COMMENT_PATTERNS.get(language, '')
+    multi_line_pattern = MULTI_LINE_COMMENT_PATTERNS.get(language, '')
     
     code = re.sub(single_line_pattern, '', code)
     code = re.sub(multi_line_pattern, '', code, flags=re.DOTALL)
     
     return code
-
 
 def generate_output_for_file(item, item_path, depth, limit, strip_comments):
     """
