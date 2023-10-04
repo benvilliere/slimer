@@ -35,13 +35,13 @@ import argparse
 import os
 import pyperclip
 import time
-
-import constants
+from .constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS
+from .__version__ import __version__
 
 def is_binary_file(filename):
     """Check if the provided filename has a binary extension."""
     _, ext = os.path.splitext(filename)
-    return ext in constants.BINARY_FILE_EXTENSIONS
+    return ext in BINARY_FILE_EXTENSIONS
 
 def read_file_content(item_path, limit=None, chunk_size=4096):
     """
@@ -98,7 +98,7 @@ def generate_output_for_file(item, item_path, depth, limit):
     
     # No try-except block here, directly reading the content
     content, truncated = read_file_content(item_path, limit)
-    language = constants.FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
+    language = FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
     return (
         f"{spacer}\n"
         f"```{language}\n"
@@ -178,7 +178,7 @@ def get_excluded_items(args):
     Returns:
     - set: Set of items to be excluded.
     """
-    excluded = set(constants.EXCLUDED_FILES + constants.EXCLUDED_DIRECTORIES + args.exclude)
+    excluded = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + args.exclude)
     included = set(args.include)
     return excluded - included
 
@@ -211,6 +211,8 @@ def parse_arguments():
         help="Only display files modified within the last N minutes. Defaults to 10 minutes if no value provided.")
     parser.add_argument('-f', '--file-extensions', nargs='*', default=[], 
         help="List of file extensions to exclusively display (e.g. .py .ts).")
+    parser.add_argument('-v', '--version', action='version', version=f"Slimer v{__version__}")
+    
     return parser.parse_args()
 
 def get_directory_output(args, absolute_path):
