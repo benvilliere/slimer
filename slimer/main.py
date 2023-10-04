@@ -1,5 +1,5 @@
 """
-Slimer: Directory and File Content Display Tool
+Slimer: Directory and File Content Visualisation Tool
 
 This script provides a tool to visualize the directory structure along with the content
 of the files within the specified directory. Users can utilize various command-line arguments
@@ -12,7 +12,7 @@ to customize the output. Some of the primary functionalities include:
 - Limit the depth of directory exploration.
 - Copy the result to the clipboard or output to a file.
 - Filter the displayed files based on their modification time.
-- Influce specific files based on their extension.
+- Include specific files based on their extension.
 
 Usage:
     Run the script with python and provide the necessary arguments. 
@@ -34,6 +34,7 @@ Date:
 import argparse
 import os
 import pyperclip
+import fnmatch
 import time
 from slimer.constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS
 from slimer.__version__ import __version__
@@ -42,6 +43,20 @@ def is_binary_file(filename):
     """Check if the provided filename has a binary extension."""
     _, ext = os.path.splitext(filename)
     return ext in BINARY_FILE_EXTENSIONS
+
+def should_exclude(item, exclusion_patterns):
+    """
+    Determines if an item should be excluded based on some conditions.
+
+    Parameters:
+    - item (str): The path or item to check.
+    - exclusion_patterns (set, optional): Set of patterns used to exclude filenames or directory names.
+
+    Returns:
+    - bool: True if the item should be excluded, False otherwise.
+    """
+    unix_path = item.replace(os.sep, '/')
+    return any(fnmatch.fnmatch(unix_path, pattern) for pattern in exclusion_patterns)
 
 def read_file_content(item_path, limit=None, chunk_size=4096):
     """
@@ -96,7 +111,6 @@ def generate_output_for_file(item, item_path, depth, limit):
     if is_binary_file(item):
         return f"{'  ' * depth}-- {item}:\n[Binary File]\n"
     
-    # No try-except block here, directly reading the content
     content, truncated = read_file_content(item_path, limit)
     language = FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
     return (
@@ -107,11 +121,8 @@ def generate_output_for_file(item, item_path, depth, limit):
         f"```\n"
     )
 
-def get_file_extension(file): 
-    return os.path.splitext(file)[1]
-
 def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, 
-                               excluded_items=None, tree_only=False, 
+                               exclusion_patterns=None, tree_only=False, 
                                include_binary=False, recent_minutes=None,
                                file_extensions=None):
     """
@@ -122,7 +133,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     - depth (int, optional): Current depth of recursion. Defaults to 0.
     - limit (int, optional): Maximum characters to display from each file.
     - depth_limit (int, optional): Maximum depth to explore in the directory structure.
-    - excluded_items (list, optional): List of filenames or directory names to exclude.
+    - exclusion_patterns (set, optional): Patterns used to exclude filenames or directory names.
     - tree_only (bool, optional): If True, only the directory structure is displayed.
     - include_binary (bool, optional): If True, binary files are included with a flag.
     - recent_minutes (int, optional): Only display files modified within the last N minutes.
@@ -131,8 +142,8 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     Returns:
     - str: Formatted string of the directory structure and file content.
     """
-    if excluded_items is None:
-        excluded_items = []
+    if exclusion_patterns is None:
+        exclusion_patterns = []
 
     if depth_limit is not None and depth >= depth_limit:
         return ""
@@ -140,7 +151,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     output = ""
 
     for item in os.listdir(directory):
-        if item in excluded_items:
+        if should_exclude(item, exclusion_patterns):
             continue
 
         item_path = os.path.join(directory, item)
@@ -155,11 +166,11 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
         
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
-            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, excluded_items, tree_only, include_binary, recent_minutes, file_extensions)
+            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, exclusion_patterns, tree_only, include_binary, recent_minutes, file_extensions)
         elif tree_only:
             output += f"{'  ' * depth}-- {item:<40}\n" 
         else:
-            if file_extensions and get_file_extension(item) not in file_extensions:
+            if file_extensions and os.path.splitext(file)[1] not in file_extensions:
                 continue
             if not include_binary and is_binary_file(item):
                 continue
@@ -168,7 +179,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     return output
 
 
-def get_excluded_items(args):
+def get_exclusion_patterns(args):
     """
     Get the set of items to be excluded based on provided arguments and constants.
 
@@ -176,11 +187,11 @@ def get_excluded_items(args):
     - args (Namespace): Parsed arguments from argparse.
 
     Returns:
-    - set: Set of items to be excluded.
+    - set: Set of patterns to use for excluding itemss.
     """
-    excluded = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + args.exclude)
-    included = set(args.include)
-    return excluded - included
+    exclusions = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + args.exclude)
+    inclusions = set(args.include)
+    return exclusions - inclusions
 
 def parse_arguments():
     """
@@ -208,7 +219,7 @@ def parse_arguments():
     parser.add_argument('-o', '--output', type=str, default=None, 
         help="Path to a file where the output will be written. If not provided, prints to console.")
     parser.add_argument('-r', '--recent', type=int, default=None, 
-        help="Only display files modified within the last N minutes. Defaults to 10 minutes if no value provided.")
+        help="Only display files modified within the last N minutes. Defaults to 10 minutes when no value is provided to the argument.")
     parser.add_argument('-f', '--file-extensions', nargs='*', default=[], 
         help="List of file extensions to exclusively display (e.g. .py .ts).")
     parser.add_argument('-v', '--version', action='version', version=f"Slimer v{__version__}")
@@ -226,7 +237,7 @@ def get_directory_output(args, absolute_path):
     Returns:
     - str: Formatted string of the directory structure and content.
     """
-    excluded_items = get_excluded_items(args)
+    exclusion_patterns = get_exclusion_patterns(args)
 
     output_parts = []
 
@@ -237,7 +248,7 @@ def get_directory_output(args, absolute_path):
         absolute_path, 
         limit=args.limit, 
         depth_limit=args.depth, 
-        excluded_items=excluded_items, 
+        exclusion_patterns=exclusion_patterns, 
         tree_only=args.tree,
         include_binary=args.binary,  
         recent_minutes=args.recent,
