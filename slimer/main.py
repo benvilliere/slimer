@@ -35,8 +35,8 @@ import argparse
 import os
 import pyperclip
 import time
-from .constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS
-from .__version__ import __version__
+from slimer.constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS
+from slimer.__version__ import __version__
 
 def is_binary_file(filename):
     """Check if the provided filename has a binary extension."""
