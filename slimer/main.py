@@ -32,10 +32,12 @@ Date:
 """
 
 import argparse
+import fnmatch
 import os
 import pyperclip
-import fnmatch
+import re
 import time
+
 from slimer.constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS
 from slimer.__version__ import __version__
 
@@ -91,8 +93,74 @@ def read_file_content(item_path, limit=None, chunk_size=4096):
 
     return ''.join(content), truncated
 
+def remove_comments(code, language):
+    """
+    Removes single and multi-line comments from the provided code for the specified language.
+    
+    Args:
+    - code (str): The source code from which comments need to be removed.
+    - language (str): The programming language of the source code. It determines which comment 
+                      patterns to use for removal.
+                      
+    Returns:
+    - str: Source code with comments removed.
+    
+    Note:
+    The function currently supports comment patterns for languages like Python, JavaScript, 
+    TypeScript, Java, C, C++, and others. If a language is not supported, the original code 
+    will be returned without any modifications.
+    """
+    single_line_patterns = {
+        'python': r'(?m)^\s*#.*?$',
+        'ruby': r'(?m)^\s*#.*?$',
+        'perl': r'(?m)^\s*#.*?$',
+        'bash': r'(?m)^\s*#.*?$',
+        'powershell': r'(?m)^\s*#.*?$',
+        'r': r'(?m)^\s*#.*?$',
+        'javascript': r'(?m)^\s*//.*?$',
+        'typescript': r'(?m)^\s*//.*?$',
+        'java': r'(?m)^\s*//.*?$',
+        'c': r'(?m)^\s*//.*?$',
+        'cpp': r'(?m)^\s*//.*?$',
+        'csharp': r'(?m)^\s*//.*?$',
+        'rust': r'(?m)^\s*//.*?$',
+        'go': r'(?m)^\s*//.*?$',
+        'php': r'(?m)^\s*//.*?$',
+        'swift': r'(?m)^\s*//.*?$',
+        'kotlin': r'(?m)^\s*//.*?$',
+        'dart': r'(?m)^\s*//.*?$',
+        'groovy': r'(?m)^\s*//.*?$',
+        'sql': r'(?m)^\s*--.*?$'
+    }
 
-def generate_output_for_file(item, item_path, depth, limit):
+    multi_line_patterns = {
+        'python': r'''(\'\'\'.*?\'\'\'|\"\"\".*?\"\"\")''',
+        'javascript': r'/\*.*?\*/',
+        'typescript': r'/\*.*?\*/',
+        'java': r'/\*.*?\*/',
+        'c': r'/\*.*?\*/',
+        'cpp': r'/\*.*?\*/',
+        'csharp': r'/\*.*?\*/',
+        'rust': r'/\*.*?\*/',
+        'go': r'/\*.*?\*/',
+        'php': r'/\*.*?\*/',
+        'swift': r'/\*.*?\*/',
+        'kotlin': r'/\*.*?\*/',
+        'dart': r'/\*.*?\*/',
+        'groovy': r'/\*.*?\*/'
+    }
+    
+    # Directly fetch the pattern for the provided language and remove comments
+    single_line_pattern = single_line_patterns.get(language, '')
+    multi_line_pattern = multi_line_patterns.get(language, '')
+    
+    code = re.sub(single_line_pattern, '', code)
+    code = re.sub(multi_line_pattern, '', code, flags=re.DOTALL)
+    
+    return code
+
+
+def generate_output_for_file(item, item_path, depth, limit, strip_comments):
     """
     Generate the formatted output string for a given file.
 
@@ -101,6 +169,7 @@ def generate_output_for_file(item, item_path, depth, limit):
     - item_path (str): Absolute path of the file.
     - depth (int): Depth of the file in the directory structure.
     - limit (int, optional): Maximum characters to display from the file.
+    - strip_comments (bool): Wether to strip comments from file contents.
 
     Returns:
     - str: Formatted output string for the file.
@@ -109,10 +178,19 @@ def generate_output_for_file(item, item_path, depth, limit):
     spacer = f"{'  ' * depth}-- {item:<40}"
 
     if is_binary_file(item):
-        return f"{'  ' * depth}-- {item}:\n[Binary File]\n"
+        return f"{'  ' * depth}-- {item} (binary file)\n"
     
     content, truncated = read_file_content(item_path, limit)
+
+    # Getting programming language from file extension
     language = FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
+    
+    if strip_comments:
+        content = remove_comments(content, language)
+
+    if not content.strip():
+        return f"{'  ' * depth}-- {item} (empty file)\n"
+    
     return (
         f"{spacer}\n"
         f"```{language}\n"
@@ -124,7 +202,7 @@ def generate_output_for_file(item, item_path, depth, limit):
 def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, 
                                exclusion_patterns=None, tree_only=False, 
                                include_binary=False, recent_minutes=None,
-                               file_extensions=None):
+                               file_extensions=None, strip_comments=False):
     """
     Display the directory structure and file content recursively.
 
@@ -138,6 +216,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
     - include_binary (bool, optional): If True, binary files are included with a flag.
     - recent_minutes (int, optional): Only display files modified within the last N minutes.
     - file_extensions (list, optional): List of file extensions to exclusively display.
+    - strip_comments (bool, optional): Wether to strip comments from file contents.
 
     Returns:
     - str: Formatted string of the directory structure and file content.
@@ -166,7 +245,10 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
         
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
-            output += display_files_in_directory(item_path, depth + 1, limit, depth_limit, exclusion_patterns, tree_only, include_binary, recent_minutes, file_extensions)
+            output += display_files_in_directory(
+                item_path, depth + 1, limit, depth_limit, 
+                exclusion_patterns, tree_only, include_binary, 
+                recent_minutes, file_extensions, strip_comments)
         elif tree_only:
             output += f"{'  ' * depth}-- {item:<40}\n" 
         else:
@@ -174,7 +256,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
                 continue
             if not include_binary and is_binary_file(item):
                 continue
-            output += generate_output_for_file(item, item_path, depth, limit)
+            output += generate_output_for_file(item, item_path, depth, limit, strip_comments)
 
     return output
 
@@ -223,6 +305,8 @@ def parse_arguments():
     parser.add_argument('-f', '--file-extensions', nargs='*', default=[], 
         help="List of file extensions to exclusively display (e.g. .py .ts).")
     parser.add_argument('-v', '--version', action='version', version=f"Slimer v{__version__}")
+    parser.add_argument('-s', '--strip-comments', action="store_true", 
+        help="Strip comments from the code in the output.")
     
     return parser.parse_args()
 
@@ -252,7 +336,8 @@ def get_directory_output(args, absolute_path):
         tree_only=args.tree,
         include_binary=args.binary,  
         recent_minutes=args.recent,
-        file_extensions=args.file_extensions
+        file_extensions=args.file_extensions,
+        strip_comments=args.strip_comments
     ))
 
     if args.append:
