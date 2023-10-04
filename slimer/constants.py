@@ -29,7 +29,7 @@ FILE_EXTENSION_MAPPINGS = {
     '.php': 'php',
     '.cpp': 'cpp',
     '.c': 'c',
-    '.h': 'cpp',
+    '.h': 'c',
     '.java': 'java',
     '.rb': 'ruby',
     '.go': 'go',
