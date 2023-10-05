@@ -210,7 +210,7 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
         elif tree_only:
             output += f"{'  ' * depth}-- {item:<40}\n" 
         else:
-            if file_extensions and os.path.splitext(file)[1] not in file_extensions:
+            if file_extensions and os.path.splitext(item_path)[1] not in file_extensions:
                 continue
             if not include_binary and is_binary_file(item):
                 continue
