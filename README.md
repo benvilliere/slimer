@@ -15,6 +15,15 @@ Slimer is a command-line tool that offers a way to visualize the directory struc
 - Filter the displayed files based on their modification time.
 - Include specific files based on their extension.
 
+## Installation
+
+- Ensure you have Python installed.
+- Install necessary dependencies:
+
+```bash
+pip install slimer
+```
+
 ## Dependencies
 
 - `pyperclip`: Used for copying output to clipboard.
