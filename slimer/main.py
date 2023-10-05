@@ -243,7 +243,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Display folder structure and file content.")
     parser.add_argument('path', help="Path to the directory you want to display.")
     parser.add_argument('-c', '--copy', action="store_true", help="Copy the output to the clipboard.")
-    parser.add_argument('-m', '--limit', type=int, default=None, 
+    parser.add_argument('-l', '--limit', type=int, default=None, 
         help="Maximum number of characters to display from each file. No limit by default.")
     parser.add_argument('-d', '--depth', type=int, 
         help="Maximum depth to explore in the directory structure.")
