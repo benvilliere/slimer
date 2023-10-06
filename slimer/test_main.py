@@ -8,9 +8,11 @@ from slimer.main import read_file_content
 from slimer.main import remove_comments
 from slimer.main import generate_output_for_file
 from slimer.main import display_files_in_directory
+from slimer.main import get_exclusion_patterns
+from slimer.constants import EXCLUDED_FILES, EXCLUDED_DIRECTORIES
 
 """
-  Testing is_binary_file
+  tests for is_binary_file Function
 """
 
 def test_is_binary_file():
@@ -18,7 +20,7 @@ def test_is_binary_file():
     assert is_binary_file("test.txt") == False
 
 """
-  Testing should_exclude
+  tests for should_exclude
 """
 
 def test_should_exclude_exact_match():
@@ -56,7 +58,7 @@ def test_should_exclude_with_windows_paths():
     assert should_exclude('src\\file.txt', patterns) == False
 
 """
-  Testing read_file_content
+  tests for read_file_content
 """
 
 CAN_DELETE_TEMP_FILES = sys.platform != 'win32'
@@ -102,7 +104,7 @@ def test_read_file_content_empty():
         assert not truncated
 
 """
-  Testing remove_comments
+  tests for remove_comments
 """
 
 def test_remove_comments_single_line_python():
@@ -146,7 +148,7 @@ def test_remove_comments_no_comments_javascript():
     assert remove_comments(code, 'javascript') == expected
 
 """
-  Testing generate_output_for_file
+  tests for generate_output_for_file
 """
 
 def create_temporary_file(content):
@@ -201,7 +203,7 @@ def test_generate_output_for_binary_file():
         os.remove(temp_file_path)
 
 """
-  Testing display_files_in_directory
+  tests for display_files_in_directory
 """
 
 def test_display_files_in_basic_directory():
@@ -250,7 +252,7 @@ def test_display_files_skip_binary():
 
         output = display_files_in_directory(tempdir, include_binary=False)
         assert "(binary file)" not in output
-        
+
         output = display_files_in_directory(tempdir, include_binary=True)
         assert "(binary file)" in output
 
@@ -281,3 +283,43 @@ def test_display_files_strip_comments():
         output = display_files_in_directory(tempdir, strip_comments=True)
         assert '# This is a comment' not in output
         assert 'print("Hello Python!")' in output
+
+"""
+  tests for display_files_in_directory
+"""
+
+class ArgsMock:
+    def __init__(self, exclude, include):
+        self.exclude = exclude
+        self.include = include
+
+def test_get_exclusion_patterns_default():
+    args = ArgsMock([], [])
+    expected_patterns = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES)
+    assert get_exclusion_patterns(args) == expected_patterns
+
+def test_get_exclusion_patterns_exclude_custom():
+    custom_exclusions = ['custom_file.txt', 'custom_folder/']
+    args = ArgsMock(custom_exclusions, [])
+    expected_patterns = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + custom_exclusions)
+    assert get_exclusion_patterns(args) == expected_patterns
+
+def test_get_exclusion_patterns_include_overrides_default():
+    override_items = ['override_file.txt', 'override_folder/']
+    args = ArgsMock([], override_items)
+    expected_patterns = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES) - set(override_items)
+    assert get_exclusion_patterns(args) == expected_patterns
+
+def test_get_exclusion_patterns_include_overrides_custom():
+    custom_exclusions = ['custom_file.txt', 'custom_folder/']
+    override_items = ['custom_file.txt']
+    args = ArgsMock(custom_exclusions, override_items)
+    expected_patterns = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + ['custom_folder/'])
+    assert get_exclusion_patterns(args) == expected_patterns
+
+def test_get_exclusion_patterns_complex_scenario():
+    custom_exclusions = ['custom1.txt', 'custom2.txt', 'custom_folder/']
+    override_items = ['custom2.txt', 'override_file.txt', 'override_folder/']
+    args = ArgsMock(custom_exclusions, override_items)
+    expected_patterns = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + ['custom1.txt', 'custom_folder/'])
+    assert get_exclusion_patterns(args) == expected_patterns
