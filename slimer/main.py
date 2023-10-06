@@ -132,11 +132,13 @@ def generate_output_for_file(item, item_path, depth, limit, strip_comments):
     Returns:
     - str: Formatted output string for the file.
     """
+    padding_left = f"{'  ' * depth}"
+
     # Use f-string alignment to ensure uniform width for file names
-    spacer = f"{'  ' * depth}-- {item:<40}"
+    spacer = f"{padding_left}-- {item:<40}"
 
     if is_binary_file(item):
-        return f"{'  ' * depth}-- {item} (binary file)\n"
+        return f"{padding_left}-- {item} (binary file)\n"
     
     content, truncated = read_file_content(item_path, limit)
 
@@ -147,7 +149,7 @@ def generate_output_for_file(item, item_path, depth, limit, strip_comments):
         content = remove_comments(content, language)
 
     if not content.strip():
-        return f"{'  ' * depth}-- {item} (empty file)\n"
+        return f"{padding_left}-- {item} (empty file)\n"
     
     return (
         f"{spacer}\n"
