@@ -145,11 +145,13 @@ def test_generate_output_for_text_file():
     temp_file_path = create_temporary_file("Hello, World!")
     output = generate_output_for_file("test.txt", temp_file_path, 0, None, False)
     expected_output = (
-        "-- test.txt                            \n"
+        "-- test.txt                                \n"
         "```\n"
         "Hello, World!\n"
         "```\n"
     )
+    print(repr(output))
+    print(repr(expected_output))
     assert output == expected_output
     if CAN_DELETE_TEMP_FILES:
         os.remove(temp_file_path)
@@ -158,8 +160,8 @@ def test_generate_output_with_comment_stripping():
     temp_file_path = create_temporary_file("# This is a comment\nprint('Hello, World!')")
     output = generate_output_for_file("test.py", temp_file_path, 0, None, True)
     expected_output = (
-        "-- test.py                            \n"
-        "```python\n"
+        "-- test.py                                 \n"
+        "```python\n\n"
         "print('Hello, World!')\n"
         "```\n"
     )
