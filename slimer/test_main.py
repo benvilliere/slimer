@@ -7,10 +7,19 @@ from slimer.main import should_exclude
 from slimer.main import read_file_content
 from slimer.main import remove_comments
 from slimer.main import generate_output_for_file
+from slimer.main import display_files_in_directory
+
+"""
+  Testing is_binary_file
+"""
 
 def test_is_binary_file():
     assert is_binary_file("test.jpg") == True
     assert is_binary_file("test.txt") == False
+
+"""
+  Testing should_exclude
+"""
 
 def test_should_exclude_exact_match():
     patterns = {'temp', 'logs'}
@@ -45,6 +54,10 @@ def test_should_exclude_with_windows_paths():
     assert should_exclude('src\\temp\\file.txt', patterns) == True
     assert should_exclude('logs\\error.log', patterns) == True
     assert should_exclude('src\\file.txt', patterns) == False
+
+"""
+  Testing read_file_content
+"""
 
 CAN_DELETE_TEMP_FILES = sys.platform != 'win32'
 
@@ -88,6 +101,10 @@ def test_read_file_content_empty():
         assert read_content == ""
         assert not truncated
 
+"""
+  Testing remove_comments
+"""
+
 def test_remove_comments_single_line_python():
     code = "# This is a comment\nprint('Hello World')\n# Another comment"
     expected = "\nprint('Hello World')\n"
@@ -127,6 +144,10 @@ def test_remove_comments_no_comments_javascript():
     code = "console.log('Hello World');"
     expected = "console.log('Hello World');"
     assert remove_comments(code, 'javascript') == expected
+
+"""
+  Testing generate_output_for_file
+"""
 
 def create_temporary_file(content):
     fd, path = tempfile.mkstemp()
@@ -178,3 +199,85 @@ def test_generate_output_for_binary_file():
     assert output == "-- test.bin (binary file)\n"
     if CAN_DELETE_TEMP_FILES:
         os.remove(temp_file_path)
+
+"""
+  Testing display_files_in_directory
+"""
+
+def test_display_files_in_basic_directory():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, 'file1.txt'), 'w') as f:
+            f.write('Hello World!')
+
+        output = display_files_in_directory(tempdir)
+        assert "-- file1.txt" in output
+
+def test_display_files_with_exclusion():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, 'file1.txt'), 'w') as f:
+            f.write('Hello World!')
+
+        with open(os.path.join(tempdir, 'file2.log'), 'w') as f:
+            f.write('Logging...')
+
+        output = display_files_in_directory(tempdir, exclusion_patterns=['*.log'])
+        assert "-- file1.txt" in output
+        assert "-- file2.log" not in output
+
+def test_display_files_with_depth_limit():
+    with tempfile.TemporaryDirectory() as tempdir:
+        subdir = os.path.join(tempdir, 'subdir')
+        os.mkdir(subdir)
+        with open(os.path.join(subdir, 'file1.txt'), 'w') as f:
+            f.write('Hello Subdir!')
+
+        output = display_files_in_directory(tempdir, depth_limit=1)
+        assert "/subdir:" in output
+        assert "-- file1.txt" not in output
+
+def test_display_files_with_content_limit():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, 'file1.txt'), 'w') as f:
+            f.write('Hello World!')
+
+        output = display_files_in_directory(tempdir, limit=5)
+        assert "...[more content...]" in output
+
+def test_display_files_skip_binary():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, 'image.jpg'), 'wb') as f:
+            f.write(b'\xFF\xD8\xFF\xE0')
+
+        output = display_files_in_directory(tempdir, include_binary=False)
+        assert "(binary file)" not in output
+        
+        output = display_files_in_directory(tempdir, include_binary=True)
+        assert "(binary file)" in output
+
+def test_display_files_recent_limit():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, 'file1.txt'), 'w') as f:
+            f.write('Hello World!')
+
+        output = display_files_in_directory(tempdir, recent_minutes=0)
+        assert "-- file1.txt" in output
+
+def test_display_files_specific_extension():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, 'script.py'), 'w') as f:
+            f.write('print("Hello Python!")')
+        with open(os.path.join(tempdir, 'note.txt'), 'w') as f:
+            f.write('Just a note.')
+
+        output = display_files_in_directory(tempdir, file_extensions=['.py'])
+        assert "-- script.py" in output
+        assert "-- note.txt" not in output
+
+def test_display_files_strip_comments():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(os.path.join(tempdir, 'script.py'), 'w') as f:
+            f.write('# This is a comment\nprint("Hello Python!")')
+
+        output = display_files_in_directory(tempdir, strip_comments=True)
+        assert '# This is a comment' not in output
+        assert 'print("Hello Python!")' in output
