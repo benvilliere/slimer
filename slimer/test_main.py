@@ -1,4 +1,5 @@
 import os
+import pytest
 import sys
 import tempfile
 
@@ -9,6 +10,7 @@ from slimer.main import remove_comments
 from slimer.main import generate_output_for_file
 from slimer.main import display_files_in_directory
 from slimer.main import get_exclusion_patterns
+from slimer.main import parse_arguments
 from slimer.constants import EXCLUDED_FILES, EXCLUDED_DIRECTORIES
 
 """
@@ -323,3 +325,42 @@ def test_get_exclusion_patterns_complex_scenario():
     args = ArgsMock(custom_exclusions, override_items)
     expected_patterns = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + ['custom1.txt', 'custom_folder/'])
     assert get_exclusion_patterns(args) == expected_patterns
+
+
+"""
+  tests for parse_arguments
+"""
+
+@pytest.fixture
+def mock_argv(monkeypatch):
+    def _mock_argv(args_list):
+        monkeypatch.setattr(sys, 'argv', args_list)
+    return _mock_argv
+
+PROG_NAME = 'slimer'
+TEST_PATH = './'
+
+def test_parse_arguments_path(mock_argv):
+    mock_argv([PROG_NAME, TEST_PATH])
+    args = parse_arguments()
+    assert args.path == TEST_PATH
+
+def test_parse_arguments_copy(mock_argv):
+    mock_argv([PROG_NAME, TEST_PATH, '--copy'])
+    args = parse_arguments()
+    assert args.copy
+
+def test_parse_arguments_limit(mock_argv):
+    mock_argv([PROG_NAME, TEST_PATH, '--limit', '5'])
+    args = parse_arguments()
+    assert args.limit == 5
+
+def test_parse_arguments_depth(mock_argv):
+    mock_argv([PROG_NAME, TEST_PATH, '--depth', '3'])
+    args = parse_arguments()
+    assert args.depth == 3
+
+def test_parse_arguments_exclude(mock_argv):
+    mock_argv([PROG_NAME, TEST_PATH, '--exclude', 'test1', 'test2'])
+    args = parse_arguments()
+    assert args.exclude == ["test1", "test2"]
