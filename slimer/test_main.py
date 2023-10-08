@@ -15,6 +15,7 @@ from slimer.main import get_exclusion_patterns
 from slimer.main import parse_arguments
 from slimer.main import get_directory_output
 from slimer.main import handle_arguments
+from slimer.main import process_directory
 from slimer.constants import EXCLUDED_FILES, EXCLUDED_DIRECTORIES
 
 """
@@ -443,3 +444,17 @@ def test_handle_arguments_invalid_path(capfd, mock_argv):
 
         captured = capfd.readouterr()
         assert captured.out == "Path '/some/invalid/path' not found.\n"
+
+"""
+  tests for process_directory
+"""
+
+def test_process_directory():
+    mock_args = argparse.Namespace(path='/some/path')
+    absolute_path = '/absolute/path'
+
+    with patch('slimer.main.get_directory_output') as mock_get_directory_output:
+        mock_get_directory_output.return_value = "expected_directory_output"
+        result = process_directory(mock_args, absolute_path)
+        mock_get_directory_output.assert_called_once_with(mock_args, absolute_path)
+        assert result == "expected_directory_output"
