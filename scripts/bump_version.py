@@ -64,6 +64,30 @@ def validate_version(version):
     return bool(pattern.match(version))
 
 
+def read_version_from_toml() -> str:
+    with open('./pyproject.toml', 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            if "version =" in line:
+                return line.split('=')[1].strip().strip('"')
+    raise ValueError("Version not found in pyproject.toml")
+
+
+def write_version_to_toml(new_version: str, dry_run=False):
+    with open('./pyproject.toml', 'r') as f:
+        contents = f.read()
+
+    new_contents = contents.replace(read_version_from_toml(), new_version)
+
+    if not dry_run:
+        with open('./pyproject.toml', 'w') as f:
+            f.write(new_contents)
+    else:
+        print("--Dry Run for pyproject.toml--")
+        print("File would have been updated to:")
+        print(new_contents)
+
+
 if __name__ == '__main__':
     try:
         parser = argparse.ArgumentParser(description="Bump version for Slimer project.")
@@ -85,6 +109,7 @@ if __name__ == '__main__':
             new_version = bump_version(major=args.major, minor=args.minor, patch=args.patch)
 
         write_version(new_version, dry_run=args.dry_run)
+        write_version_to_toml(new_version, dry_run=args.dry_run)
 
         if args.dry_run:
             print(f"Version would be set to: {new_version}")
