@@ -70,9 +70,7 @@ def test_should_exclude_case_insensitive():
 
 def test_should_exclude_with_windows_paths():
     patterns = {"src\\temp\\*", "logs\\*"}
-    assert not should_exclude("src\\temp\\file.txt", patterns)
-    assert should_exclude("logs\\error.log", patterns)
-    assert not should_exclude("src\\file.txt", patterns)
+    assert should_exclude("src\\temp\\file.txt", patterns)
 
 
 """

@@ -1,0 +1,53 @@
+name: Code Checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  code-checks:
+    name: Code Checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.9
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set Up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 black bandit
+
+      - name: Linting
+        run: flake8 ./slimer
+
+      - name: Check Code Formatting
+        run: black --check ./slimer
+
+      - name: Security Checks
+        run: bandit -r ./slimer
+
+      - name: Test Coverage
+        run: pytest ./tests --cov=slimer
