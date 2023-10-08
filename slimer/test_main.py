@@ -14,6 +14,7 @@ from slimer.main import display_files_in_directory
 from slimer.main import get_exclusion_patterns
 from slimer.main import parse_arguments
 from slimer.main import get_directory_output
+from slimer.main import handle_arguments
 from slimer.constants import EXCLUDED_FILES, EXCLUDED_DIRECTORIES
 
 """
@@ -408,3 +409,37 @@ def test_no_prepend_append_args():
         
         output = get_directory_output(mock_args, "/dummy/path")
         assert output == "directory_output"
+
+"""
+  tests for handle_arguments
+"""
+
+def test_handle_arguments_valid_path(mock_argv):
+    mock_argv(['slimer', '/some/valid/path'])
+
+    with patch('slimer.main.parse_arguments') as mock_parse, \
+         patch('os.path.abspath', return_value='/absolute/path'), \
+         patch('os.path.exists', return_value=True):
+
+        mock_parse.return_value = argparse.Namespace(path='/some/valid/path')
+
+        args, absolute_path = handle_arguments()
+        assert args.path == '/some/valid/path'
+        assert absolute_path == '/absolute/path'
+
+def test_handle_arguments_invalid_path(capfd, mock_argv):
+    mock_argv(['slimer', '/some/invalid/path'])
+
+    with patch('slimer.main.parse_arguments') as mock_parse, \
+         patch('os.path.abspath', return_value='/absolute/path'), \
+         patch('os.path.exists', return_value=False):
+
+        mock_parse.return_value = argparse.Namespace(path='/some/invalid/path')
+
+        with pytest.raises(SystemExit) as exc:
+            handle_arguments()
+
+        assert exc.value.code == 1
+
+        captured = capfd.readouterr()
+        assert captured.out == "Path '/some/invalid/path' not found.\n"
