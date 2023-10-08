@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "slimer"
-version = "0.1.0"
+version = "1.0.1"
 description = "Slimer reads your folder structure and file contents to transform it into a concise, readable string overview"
 authors = ["Ben Villiere"]
 license = "MIT"
