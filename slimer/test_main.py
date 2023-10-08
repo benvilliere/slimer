@@ -3,7 +3,7 @@ import os
 import pytest
 import sys
 import tempfile
-from unittest.mock import patch
+from unittest.mock import patch, mock_open, call
 
 from slimer.main import is_binary_file
 from slimer.main import should_exclude
@@ -16,6 +16,8 @@ from slimer.main import parse_arguments
 from slimer.main import get_directory_output
 from slimer.main import handle_arguments
 from slimer.main import process_directory
+from slimer.main import handle_output
+from slimer.main import main
 from slimer.constants import EXCLUDED_FILES, EXCLUDED_DIRECTORIES
 
 """
@@ -458,3 +460,37 @@ def test_process_directory():
         result = process_directory(mock_args, absolute_path)
         mock_get_directory_output.assert_called_once_with(mock_args, absolute_path)
         assert result == "expected_directory_output"
+
+"""
+  tests for handle_output
+"""
+
+def test_handle_output_to_file():
+    mock_output = "some_output_content"
+    mock_output_file = "/path/to/output_file.txt"
+    # Using mock_open to mock the open function
+    m = mock_open()
+    with patch("builtins.open", m):
+        handle_output(mock_output, copy_to_clipboard=False, output_file=mock_output_file)
+
+    # Ensure file is opened in write mode and content is written
+    m.assert_called_once_with(mock_output_file, 'w', encoding='utf-8')
+    m().write.assert_called_once_with(mock_output)
+
+def test_handle_output_to_clipboard():
+    mock_output = "some_output_content"
+
+    # Mocking pyperclip.copy to ensure it gets called correctly
+    with patch("slimer.main.pyperclip.copy") as mock_pyperclip_copy:
+        handle_output(mock_output, copy_to_clipboard=True, output_file=None)
+
+    mock_pyperclip_copy.assert_called_once_with(mock_output)
+
+def test_handle_output_to_console():
+    mock_output = "some_output_content"
+
+    # Mocking the print function to verify the output
+    with patch("builtins.print") as mock_print:
+        handle_output(mock_output, copy_to_clipboard=False, output_file=None)
+
+    mock_print.assert_called_once_with(mock_output)
