@@ -66,10 +66,9 @@ def should_exclude(item, exclusion_patterns):
     Returns:
     - bool: True if the item should be excluded, False otherwise.
     """
-    unix_path = item.replace(os.sep, "/")
+    unix_path = item.replace(os.sep, "/").lower()
     return any(
-        fnmatch.fnmatchcase(unix_path, pattern, flags=fnmatch.FNM_CASEFOLD)
-        for pattern in exclusion_patterns
+        fnmatch.fnmatch(unix_path, pattern.lower()) for pattern in exclusion_patterns
     )
 
 
