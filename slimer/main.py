@@ -46,7 +46,7 @@ from slimer.constants import (
     SINGLE_LINE_COMMENT_PATTERNS,
     MULTI_LINE_COMMENT_PATTERNS,
 )
-from slimer.__version__ import __version__
+from slimer.__init__ import __version__
 
 
 def is_binary_file(filename):
