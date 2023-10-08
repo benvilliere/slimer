@@ -38,7 +38,14 @@ import pyperclip
 import re
 import time
 
-from slimer.constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS, SINGLE_LINE_COMMENT_PATTERNS, MULTI_LINE_COMMENT_PATTERNS
+from slimer.constants import (
+    EXCLUDED_DIRECTORIES,
+    EXCLUDED_FILES,
+    BINARY_FILE_EXTENSIONS,
+    FILE_EXTENSION_MAPPINGS,
+    SINGLE_LINE_COMMENT_PATTERNS,
+    MULTI_LINE_COMMENT_PATTERNS,
+)
 from slimer.__version__ import __version__
 
 
@@ -59,7 +66,7 @@ def should_exclude(item, exclusion_patterns):
     Returns:
     - bool: True if the item should be excluded, False otherwise.
     """
-    unix_path = item.replace(os.sep, '/')
+    unix_path = item.replace(os.sep, "/")
     return any(fnmatch.fnmatch(unix_path, pattern) for pattern in exclusion_patterns)
 
 
@@ -78,7 +85,7 @@ def read_file_content(item_path, limit=None, chunk_size=4096):
     content = []
     truncated = False
 
-    with open(item_path, 'r', encoding='utf-8', errors='replace') as file:
+    with open(item_path, "r", encoding="utf-8", errors="replace") as file:
         bytes_read = 0
         while not limit or bytes_read < limit:
             if limit:
@@ -90,11 +97,13 @@ def read_file_content(item_path, limit=None, chunk_size=4096):
                 break
 
             content.append(chunk)
-            bytes_read += len(chunk.encode('utf-8'))  # considering bytes and not just characters
+            bytes_read += len(
+                chunk.encode("utf-8")
+            )  # considering bytes and not just characters
 
         truncated = bool(limit) and file.read(1)  # Check if there is more content left
 
-    return ''.join(content), truncated
+    return "".join(content), truncated
 
 
 def remove_comments(code, language):
@@ -114,11 +123,11 @@ def remove_comments(code, language):
     TypeScript, Java, C, C++, and others. If a language is not supported, the original code
     will be returned without any modifications.
     """
-    single_line_pattern = SINGLE_LINE_COMMENT_PATTERNS.get(language, '')
-    multi_line_pattern = MULTI_LINE_COMMENT_PATTERNS.get(language, '')
+    single_line_pattern = SINGLE_LINE_COMMENT_PATTERNS.get(language, "")
+    multi_line_pattern = MULTI_LINE_COMMENT_PATTERNS.get(language, "")
 
-    code = re.sub(single_line_pattern, '', code)
-    code = re.sub(multi_line_pattern, '', code, flags=re.DOTALL)
+    code = re.sub(single_line_pattern, "", code)
+    code = re.sub(multi_line_pattern, "", code, flags=re.DOTALL)
 
     return code
 
@@ -148,7 +157,7 @@ def generate_output_for_file(item, item_path, depth, limit, strip_comments):
     content, truncated = read_file_content(item_path, limit)
 
     # Getting programming language from file extension
-    language = FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
+    language = FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], "")
 
     if strip_comments:
         content = remove_comments(content, language)
@@ -165,10 +174,18 @@ def generate_output_for_file(item, item_path, depth, limit, strip_comments):
     )
 
 
-def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
-                               exclusion_patterns=None, tree_only=False,
-                               include_binary=False, recent_minutes=None,
-                               file_extensions=None, strip_comments=False):
+def display_files_in_directory(
+    directory,
+    depth=0,
+    limit=None,
+    depth_limit=None,
+    exclusion_patterns=None,
+    tree_only=False,
+    include_binary=False,
+    recent_minutes=None,
+    file_extensions=None,
+    strip_comments=False,
+):
     """
     Display the directory structure and file content recursively.
 
@@ -212,9 +229,17 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
             output += display_files_in_directory(
-                item_path, depth + 1, limit, depth_limit,
-                exclusion_patterns, tree_only, include_binary,
-                recent_minutes, file_extensions, strip_comments)
+                item_path,
+                depth + 1,
+                limit,
+                depth_limit,
+                exclusion_patterns,
+                tree_only,
+                include_binary,
+                recent_minutes,
+                file_extensions,
+                strip_comments,
+            )
         elif tree_only:
             output += f"{'  ' * depth}-- {item:<40}\n"
         else:
@@ -222,7 +247,9 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
                 continue
             if not include_binary and is_binary_file(item):
                 continue
-            output += generate_output_for_file(item, item_path, depth, limit, strip_comments)
+            output += generate_output_for_file(
+                item, item_path, depth, limit, strip_comments
+            )
 
     return output
 
@@ -249,31 +276,96 @@ def parse_arguments():
     Returns:
     - Namespace: Namespace object containing parsed arguments.
     """
-    parser = argparse.ArgumentParser(description="Display folder structure and file content.")
-    parser.add_argument('path', help="Path to the directory you want to display.")
-    parser.add_argument('-c', '--copy', action="store_true", help="Copy the output to the clipboard.")
-    parser.add_argument('-l', '--limit', type=int, default=None,
-                        help="Maximum number of characters to display from each file. No limit by default.")
-    parser.add_argument('-d', '--depth', type=int,
-                        help="Maximum depth to explore in the directory structure.")
-    parser.add_argument('-e', '--exclude', nargs='*', default=[],
-                        help="List of files or directories to exclude.")
-    parser.add_argument('-i', '--include', nargs='*', default=[],
-                        help="List of files or directories to forcefully include even if they are in the exclude list.")
-    parser.add_argument('-b', '--binary', action="store_true",
-                        help="Include binary files with a [Binary File] flag.")
-    parser.add_argument('-t', '--tree', action="store_true", help="Only display the folder structure without file content.")
-    parser.add_argument('-p', '--prepend', type=str, default="", help="String to prepend at the beginning of the output.")
-    parser.add_argument('-a', '--append', type=str, default="", help="String to append at the end of the output.")
-    parser.add_argument('-o', '--output', type=str, default=None,
-                        help="Path to a file where the output will be written. If not provided, prints to console.")
-    parser.add_argument('-r', '--recent', type=int, default=None,
-                        help="Only display files modified within the last N minutes. Defaults to 10 minutes when no value is provided to the argument.")
-    parser.add_argument('-f', '--file-extensions', nargs='*', default=[],
-                        help="List of file extensions to exclusively display (e.g. .py .ts).")
-    parser.add_argument('-v', '--version', action='version', version=f"Slimer v{__version__}")
-    parser.add_argument('-s', '--strip-comments', action="store_true",
-                        help="Strip comments from the code in the output.")
+    parser = argparse.ArgumentParser(
+        description="Display folder structure and file content."
+    )
+    parser.add_argument("path", help="Path to the directory you want to display.")
+    parser.add_argument(
+        "-c", "--copy", action="store_true", help="Copy the output to the clipboard."
+    )
+    parser.add_argument(
+        "-l",
+        "--limit",
+        type=int,
+        default=None,
+        help="Maximum number of characters to display from each file. No limit by default.",
+    )
+    parser.add_argument(
+        "-d",
+        "--depth",
+        type=int,
+        help="Maximum depth to explore in the directory structure.",
+    )
+    parser.add_argument(
+        "-e",
+        "--exclude",
+        nargs="*",
+        default=[],
+        help="List of files or directories to exclude.",
+    )
+    parser.add_argument(
+        "-i",
+        "--include",
+        nargs="*",
+        default=[],
+        help="List of files or directories to forcefully include even if they are in the exclude list.",
+    )
+    parser.add_argument(
+        "-b",
+        "--binary",
+        action="store_true",
+        help="Include binary files with a [Binary File] flag.",
+    )
+    parser.add_argument(
+        "-t",
+        "--tree",
+        action="store_true",
+        help="Only display the folder structure without file content.",
+    )
+    parser.add_argument(
+        "-p",
+        "--prepend",
+        type=str,
+        default="",
+        help="String to prepend at the beginning of the output.",
+    )
+    parser.add_argument(
+        "-a",
+        "--append",
+        type=str,
+        default="",
+        help="String to append at the end of the output.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default=None,
+        help="Path to a file where the output will be written. If not provided, prints to console.",
+    )
+    parser.add_argument(
+        "-r",
+        "--recent",
+        type=int,
+        default=None,
+        help="Only display files modified within the last N minutes. Defaults to 10 minutes when no value is provided to the argument.",
+    )
+    parser.add_argument(
+        "-f",
+        "--file-extensions",
+        nargs="*",
+        default=[],
+        help="List of file extensions to exclusively display (e.g. .py .ts).",
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"Slimer v{__version__}"
+    )
+    parser.add_argument(
+        "-s",
+        "--strip-comments",
+        action="store_true",
+        help="Strip comments from the code in the output.",
+    )
 
     return parser.parse_args()
 
@@ -296,22 +388,24 @@ def get_directory_output(args, absolute_path):
     if args.prepend:
         output_parts.append(args.prepend)
 
-    output_parts.append(display_files_in_directory(
-        absolute_path,
-        limit=args.limit,
-        depth_limit=args.depth,
-        exclusion_patterns=exclusion_patterns,
-        tree_only=args.tree,
-        include_binary=args.binary,
-        recent_minutes=args.recent,
-        file_extensions=args.file_extensions,
-        strip_comments=args.strip_comments
-    ))
+    output_parts.append(
+        display_files_in_directory(
+            absolute_path,
+            limit=args.limit,
+            depth_limit=args.depth,
+            exclusion_patterns=exclusion_patterns,
+            tree_only=args.tree,
+            include_binary=args.binary,
+            recent_minutes=args.recent,
+            file_extensions=args.file_extensions,
+            strip_comments=args.strip_comments,
+        )
+    )
 
     if args.append:
         output_parts.append(args.append)
 
-    return '\n'.join(output_parts)
+    return "\n".join(output_parts)
 
 
 def handle_arguments():
@@ -355,7 +449,7 @@ def handle_output(output, copy_to_clipboard, output_file=None):
     - output_file (str): Path to the file where the output will be written.
     """
     if output_file:
-        with open(output_file, 'w', encoding='utf-8') as file:
+        with open(output_file, "w", encoding="utf-8") as file:
             file.write(output)
     elif copy_to_clipboard:
         pyperclip.copy(output)
