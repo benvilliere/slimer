@@ -1,8 +1,4 @@
 [run]
-omit =
-    test_main.py
-    setup.py
-
-[report]
-exclude_lines =
-    if __name__ == .__main__.:
+omit=
+  tests/*
+  setup.py
