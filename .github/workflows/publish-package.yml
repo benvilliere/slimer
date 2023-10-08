@@ -1,4 +1,4 @@
-name: Code Checks
+name: Publish Package
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
       - main
 
 jobs:
-  code-checks:
+  publish-package:
     name: Code Checks
     runs-on: ubuntu-latest
     strategy:
@@ -52,5 +52,11 @@ jobs:
       - name: Test Coverage
         run: poetry run pytest ./tests --cov=slimer
 
+      - name: Bump Version
+        run: poetry build
+
       - name: Build
         run: poetry build
+
+      - name: Publish
+        run: poetry publish
