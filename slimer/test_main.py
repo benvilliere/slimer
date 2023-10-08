@@ -1,7 +1,9 @@
+import argparse
 import os
 import pytest
 import sys
 import tempfile
+from unittest.mock import patch
 
 from slimer.main import is_binary_file
 from slimer.main import should_exclude
@@ -11,6 +13,7 @@ from slimer.main import generate_output_for_file
 from slimer.main import display_files_in_directory
 from slimer.main import get_exclusion_patterns
 from slimer.main import parse_arguments
+from slimer.main import get_directory_output
 from slimer.constants import EXCLUDED_FILES, EXCLUDED_DIRECTORIES
 
 """
@@ -326,7 +329,6 @@ def test_get_exclusion_patterns_complex_scenario():
     expected_patterns = set(EXCLUDED_FILES + EXCLUDED_DIRECTORIES + ['custom1.txt', 'custom_folder/'])
     assert get_exclusion_patterns(args) == expected_patterns
 
-
 """
   tests for parse_arguments
 """
@@ -364,3 +366,45 @@ def test_parse_arguments_exclude(mock_argv):
     mock_argv([PROG_NAME, TEST_PATH, '--exclude', 'test1', 'test2'])
     args = parse_arguments()
     assert args.exclude == ["test1", "test2"]
+
+"""
+  tests for get_directory_output
+"""
+
+def test_prepend_append_args():
+    mock_args = argparse.Namespace(
+        prepend="PREPEND",
+        append="APPEND",
+        limit=None,
+        depth=None,
+        tree=False,
+        binary=False,
+        recent=None,
+        file_extensions=None,
+        strip_comments=False
+    )
+
+    with patch("slimer.main.get_exclusion_patterns", return_value=[]), \
+         patch("slimer.main.display_files_in_directory", return_value="directory_output"):
+        
+        output = get_directory_output(mock_args, "/dummy/path")
+        assert output == "PREPEND\ndirectory_output\nAPPEND"
+
+def test_no_prepend_append_args():
+    mock_args = argparse.Namespace(
+        prepend=None,
+        append=None,
+        limit=None,
+        depth=None,
+        tree=False,
+        binary=False,
+        recent=None,
+        file_extensions=None,
+        strip_comments=False
+    )
+
+    with patch("slimer.main.get_exclusion_patterns", return_value=[]), \
+         patch("slimer.main.display_files_in_directory", return_value="directory_output"):
+        
+        output = get_directory_output(mock_args, "/dummy/path")
+        assert output == "directory_output"
