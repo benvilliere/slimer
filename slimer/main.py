@@ -67,7 +67,7 @@ def should_exclude(item, exclusion_patterns):
     - bool: True if the item should be excluded, False otherwise.
     """
     unix_path = item.replace(os.sep, "/")
-    return any(fnmatch.fnmatch(unix_path, pattern) for pattern in exclusion_patterns)
+    return any(fnmatch.fnmatchcase(unix_path, pattern, flags=fnmatch.FNM_CASEFOLD) for pattern in exclusion_patterns)
 
 
 def read_file_content(item_path, limit=None, chunk_size=4096):
