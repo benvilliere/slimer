@@ -5,6 +5,17 @@ import re
 SLIMER_VERSION_FILE = os.path.join(os.path.dirname(__file__), '../slimer', '__version__.py')
 
 
+def clean_version(version: str) -> str:
+    """
+    Cleans the version string by removing any alphabetical prefix.
+    E.g., v0.0.1 -> 0.0.1
+    """
+    match = re.search(r'(\d+\.\d+\.\d+)', version)
+    if match:
+        return match.group(1)
+    return version
+
+
 def read_version():
     with open(SLIMER_VERSION_FILE, 'r') as f:
         contents = f.read()
@@ -66,9 +77,10 @@ if __name__ == '__main__':
         new_version = None
 
         if args.version:
-            if not validate_version(args.version):
-                raise ValueError(f"Invalid version format: {args.version}. Expected format: X.Y.Z")
-            new_version = args.version
+            cleaned_version = clean_version(args.version)
+            if not validate_version(cleaned_version):
+                raise ValueError(f"Invalid version format: {cleaned_version}. Expected format: X.Y.Z")
+            new_version = cleaned_version
         else:
             new_version = bump_version(major=args.major, minor=args.minor, patch=args.patch)
 
