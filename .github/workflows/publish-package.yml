@@ -57,7 +57,11 @@ jobs:
         run: poetry build
 
       - name: Publish Package
-        run: poetry publish
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_API_TOKEN
+          poetry publish --username __token__
 
       - name: Commit Package Version Update
         run: |
