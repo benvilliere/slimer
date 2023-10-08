@@ -15,7 +15,7 @@ to customize the output. Some of the primary functionalities include:
 - Include specific files based on their extension.
 
 Usage:
-    Run the script with python and provide the necessary arguments. 
+    Run the script with python and provide the necessary arguments.
     Use the `-h` or `--help` option for more details on available command-line arguments.
 
 Dependencies:
@@ -41,10 +41,12 @@ import time
 from slimer.constants import EXCLUDED_DIRECTORIES, EXCLUDED_FILES, BINARY_FILE_EXTENSIONS, FILE_EXTENSION_MAPPINGS, SINGLE_LINE_COMMENT_PATTERNS, MULTI_LINE_COMMENT_PATTERNS
 from slimer.__version__ import __version__
 
+
 def is_binary_file(filename):
     """Check if the provided filename has a binary extension."""
     _, ext = os.path.splitext(filename)
     return ext in BINARY_FILE_EXTENSIONS
+
 
 def should_exclude(item, exclusion_patterns):
     """
@@ -60,15 +62,16 @@ def should_exclude(item, exclusion_patterns):
     unix_path = item.replace(os.sep, '/')
     return any(fnmatch.fnmatch(unix_path, pattern) for pattern in exclusion_patterns)
 
+
 def read_file_content(item_path, limit=None, chunk_size=4096):
     """
     Read the content of a file up to a given limit using chunks.
-    
+
     Args:
     - item_path (str): Path to the file.
     - limit (int, optional): Maximum number of characters to read. Reads the entire file if not provided.
     - chunk_size (int, optional): Size of each chunk to be read from the file.
-    
+
     Returns:
     - tuple: The content of the file and a flag indicating if the content was truncated.
     """
@@ -93,30 +96,32 @@ def read_file_content(item_path, limit=None, chunk_size=4096):
 
     return ''.join(content), truncated
 
+
 def remove_comments(code, language):
     """
     Removes single and multi-line comments from the provided code for the specified language.
-    
+
     Args:
     - code (str): The source code from which comments need to be removed.
-    - language (str): The programming language of the source code. It determines which comment 
+    - language (str): The programming language of the source code. It determines which comment
                       patterns to use for removal.
-                      
+
     Returns:
     - str: Source code with comments removed.
-    
+
     Note:
-    The function currently supports comment patterns for languages like Python, JavaScript, 
-    TypeScript, Java, C, C++, and others. If a language is not supported, the original code 
+    The function currently supports comment patterns for languages like Python, JavaScript,
+    TypeScript, Java, C, C++, and others. If a language is not supported, the original code
     will be returned without any modifications.
     """
     single_line_pattern = SINGLE_LINE_COMMENT_PATTERNS.get(language, '')
     multi_line_pattern = MULTI_LINE_COMMENT_PATTERNS.get(language, '')
-    
+
     code = re.sub(single_line_pattern, '', code)
     code = re.sub(multi_line_pattern, '', code, flags=re.DOTALL)
-    
+
     return code
+
 
 def generate_output_for_file(item, item_path, depth, limit, strip_comments):
     """
@@ -139,18 +144,18 @@ def generate_output_for_file(item, item_path, depth, limit, strip_comments):
 
     if is_binary_file(item):
         return f"{padding_left}-- {item} (binary file)\n"
-    
+
     content, truncated = read_file_content(item_path, limit)
 
     # Getting programming language from file extension
     language = FILE_EXTENSION_MAPPINGS.get(os.path.splitext(item)[1], '')
-    
+
     if strip_comments:
         content = remove_comments(content, language)
 
     if not content.strip():
         return f"{padding_left}-- {item} (empty file)\n"
-    
+
     return (
         f"{spacer}\n"
         f"```{language}\n"
@@ -159,8 +164,9 @@ def generate_output_for_file(item, item_path, depth, limit, strip_comments):
         f"```\n"
     )
 
-def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None, 
-                               exclusion_patterns=None, tree_only=False, 
+
+def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
+                               exclusion_patterns=None, tree_only=False,
                                include_binary=False, recent_minutes=None,
                                file_extensions=None, strip_comments=False):
     """
@@ -202,15 +208,15 @@ def display_files_in_directory(directory, depth=0, limit=None, depth_limit=None,
             seconds_in_a_minute = 60
             if current_time - file_mod_time > recent_minutes * seconds_in_a_minute:
                 continue  # Skip this file if it wasn't modified within the recent_minutes timeframe
-        
+
         if os.path.isdir(item_path):
             output += f"{'  ' * depth}/{item}:\n"
             output += display_files_in_directory(
-                item_path, depth + 1, limit, depth_limit, 
-                exclusion_patterns, tree_only, include_binary, 
+                item_path, depth + 1, limit, depth_limit,
+                exclusion_patterns, tree_only, include_binary,
                 recent_minutes, file_extensions, strip_comments)
         elif tree_only:
-            output += f"{'  ' * depth}-- {item:<40}\n" 
+            output += f"{'  ' * depth}-- {item:<40}\n"
         else:
             if file_extensions and os.path.splitext(item)[1] not in file_extensions:
                 continue
@@ -235,6 +241,7 @@ def get_exclusion_patterns(args):
     inclusions = set(args.include)
     return exclusions - inclusions
 
+
 def parse_arguments():
     """
     Parse command line arguments using argparse.
@@ -245,30 +252,31 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Display folder structure and file content.")
     parser.add_argument('path', help="Path to the directory you want to display.")
     parser.add_argument('-c', '--copy', action="store_true", help="Copy the output to the clipboard.")
-    parser.add_argument('-l', '--limit', type=int, default=None, 
-        help="Maximum number of characters to display from each file. No limit by default.")
-    parser.add_argument('-d', '--depth', type=int, 
-        help="Maximum depth to explore in the directory structure.")
-    parser.add_argument('-e', '--exclude', nargs='*', default=[], 
-        help="List of files or directories to exclude.")
-    parser.add_argument('-i', '--include', nargs='*', default=[], 
-        help="List of files or directories to forcefully include even if they are in the exclude list.")
-    parser.add_argument('-b', '--binary', action="store_true", 
-        help="Include binary files with a [Binary File] flag.")
+    parser.add_argument('-l', '--limit', type=int, default=None,
+                        help="Maximum number of characters to display from each file. No limit by default.")
+    parser.add_argument('-d', '--depth', type=int,
+                        help="Maximum depth to explore in the directory structure.")
+    parser.add_argument('-e', '--exclude', nargs='*', default=[],
+                        help="List of files or directories to exclude.")
+    parser.add_argument('-i', '--include', nargs='*', default=[],
+                        help="List of files or directories to forcefully include even if they are in the exclude list.")
+    parser.add_argument('-b', '--binary', action="store_true",
+                        help="Include binary files with a [Binary File] flag.")
     parser.add_argument('-t', '--tree', action="store_true", help="Only display the folder structure without file content.")
     parser.add_argument('-p', '--prepend', type=str, default="", help="String to prepend at the beginning of the output.")
     parser.add_argument('-a', '--append', type=str, default="", help="String to append at the end of the output.")
-    parser.add_argument('-o', '--output', type=str, default=None, 
-        help="Path to a file where the output will be written. If not provided, prints to console.")
-    parser.add_argument('-r', '--recent', type=int, default=None, 
-        help="Only display files modified within the last N minutes. Defaults to 10 minutes when no value is provided to the argument.")
-    parser.add_argument('-f', '--file-extensions', nargs='*', default=[], 
-        help="List of file extensions to exclusively display (e.g. .py .ts).")
+    parser.add_argument('-o', '--output', type=str, default=None,
+                        help="Path to a file where the output will be written. If not provided, prints to console.")
+    parser.add_argument('-r', '--recent', type=int, default=None,
+                        help="Only display files modified within the last N minutes. Defaults to 10 minutes when no value is provided to the argument.")
+    parser.add_argument('-f', '--file-extensions', nargs='*', default=[],
+                        help="List of file extensions to exclusively display (e.g. .py .ts).")
     parser.add_argument('-v', '--version', action='version', version=f"Slimer v{__version__}")
-    parser.add_argument('-s', '--strip-comments', action="store_true", 
-        help="Strip comments from the code in the output.")
-    
+    parser.add_argument('-s', '--strip-comments', action="store_true",
+                        help="Strip comments from the code in the output.")
+
     return parser.parse_args()
+
 
 def get_directory_output(args, absolute_path):
     """
@@ -289,12 +297,12 @@ def get_directory_output(args, absolute_path):
         output_parts.append(args.prepend)
 
     output_parts.append(display_files_in_directory(
-        absolute_path, 
-        limit=args.limit, 
-        depth_limit=args.depth, 
-        exclusion_patterns=exclusion_patterns, 
+        absolute_path,
+        limit=args.limit,
+        depth_limit=args.depth,
+        exclusion_patterns=exclusion_patterns,
         tree_only=args.tree,
-        include_binary=args.binary,  
+        include_binary=args.binary,
         recent_minutes=args.recent,
         file_extensions=args.file_extensions,
         strip_comments=args.strip_comments
@@ -304,6 +312,7 @@ def get_directory_output(args, absolute_path):
         output_parts.append(args.append)
 
     return '\n'.join(output_parts)
+
 
 def handle_arguments():
     """
@@ -321,6 +330,7 @@ def handle_arguments():
 
     return args, absolute_path
 
+
 def process_directory(args, absolute_path):
     """
     Processes the directory based on provided arguments.
@@ -333,6 +343,7 @@ def process_directory(args, absolute_path):
     - str: Formatted string of the directory structure and content.
     """
     return get_directory_output(args, absolute_path)
+
 
 def handle_output(output, copy_to_clipboard, output_file=None):
     """
@@ -351,9 +362,10 @@ def handle_output(output, copy_to_clipboard, output_file=None):
     else:
         print(output)
 
+
 def main():
     """
-    Main function to execute the program. 
+    Main function to execute the program.
     """
     try:
         args, absolute_path = handle_arguments()
@@ -361,6 +373,7 @@ def main():
         handle_output(output, args.copy, args.output)
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
+
 
 if __name__ == "__main__":
     main()
