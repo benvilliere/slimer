@@ -57,7 +57,7 @@ jobs:
         run: poetry build
 
       - name: Publish Package
-          poetry publish
+        run: poetry publish
 
       - name: Commit Package Version Update
         run: |
