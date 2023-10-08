@@ -41,16 +41,16 @@ jobs:
           poetry install
 
       - name: Linting
-        run: flake8 ./slimer
+        run: poetry run flake8 ./slimer
 
       - name: Check Code Formatting
-        run: black --check ./slimer
+        run: poetry run black --check ./slimer
 
       - name: Security Checks
-        run: bandit -r ./slimer
+        run: poetry run bandit -r ./slimer
 
       - name: Test Coverage
-        run: pytest ./tests --cov=slimer
+        run: poetry run pytest ./tests --cov=slimer
 
       - name: Build
         run: poetry build
