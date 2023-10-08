@@ -305,7 +305,7 @@ def test_display_files_recent_limit():
         with open(os.path.join(tempdir, "file1.txt"), "w") as f:
             f.write("Hello World!")
 
-        output = display_files_in_directory(tempdir, recent_minutes=0)
+        output = display_files_in_directory(tempdir, recent_minutes=1)
         assert "-- file1.txt" in output
 
 
