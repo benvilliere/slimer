@@ -3,7 +3,7 @@ import os
 import pytest
 import sys
 import tempfile
-from unittest.mock import patch, mock_open, call
+from unittest.mock import patch, mock_open, call, Mock
 
 from slimer.main import is_binary_file
 from slimer.main import should_exclude
@@ -494,3 +494,53 @@ def test_handle_output_to_console():
         handle_output(mock_output, copy_to_clipboard=False, output_file=None)
 
     mock_print.assert_called_once_with(mock_output)
+    
+"""
+  tests for main
+"""
+
+def test_main_happy_path():
+    mock_args = Mock()
+    mock_absolute_path = "mock/path"
+    mock_output = "mock_output"
+
+    # Mock the internal function calls to simulate a successful run
+    with patch("slimer.main.handle_arguments", return_value=(mock_args, mock_absolute_path)), \
+         patch("slimer.main.process_directory", return_value=mock_output), \
+         patch("slimer.main.handle_output") as mock_handle_output:
+        
+        main()
+
+        # Ensure the mocked functions were called with the right arguments
+        mock_handle_output.assert_called_once_with(mock_output, mock_args.copy, mock_args.output)
+
+def test_main_handle_arguments_exception():
+    with patch("slimer.main.handle_arguments", side_effect=Exception("Test Error")), \
+         patch("builtins.print") as mock_print:
+
+        main()
+
+        mock_print.assert_called_once_with("An unexpected error occurred: Test Error")
+
+def test_main_process_directory_exception():
+    with patch("slimer.main.handle_arguments", return_value=(Mock(), "mock/path")), \
+         patch("slimer.main.process_directory", side_effect=Exception("Test Error")), \
+         patch("builtins.print") as mock_print:
+
+        main()
+
+        mock_print.assert_called_once_with("An unexpected error occurred: Test Error")
+
+def test_main_handle_output_exception():
+    mock_args = Mock()
+    mock_absolute_path = "mock/path"
+    mock_output = "mock_output"
+
+    with patch("slimer.main.handle_arguments", return_value=(mock_args, mock_absolute_path)), \
+         patch("slimer.main.process_directory", return_value=mock_output), \
+         patch("slimer.main.handle_output", side_effect=Exception("Test Error")), \
+         patch("builtins.print") as mock_print:
+
+        main()
+
+        mock_print.assert_called_once_with("An unexpected error occurred: Test Error")
