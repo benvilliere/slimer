@@ -1,10 +1,12 @@
 # Slimer
 
-![Slimer](https://github.com/benvilliere/slimer/blob/main/slimer.svg?raw=true)
-
 ## Directory and File Content Visualisation CLI Tool
 
-Slimer is a command-line tool that offers a way to visualize the directory structure along with the content of the files within a specified directory. With a range of customizable command-line arguments, users can adapt the output to their preferences.
+Slimer is a command line tool that helps you digest a folder structure and its file contents. It was designed to help with prompt engineering. 
+
+<p align="center">
+  <img src="./slimer.svg" width="320" title="Slimer" alt="Slimer">
+</p>
 
 ## Features
 
