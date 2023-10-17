@@ -32,7 +32,7 @@ pip install slimer
 
 ## Usage
 
-To use Slimer, execute the `main.py` script with Python and provide the necessary arguments:
+To use Slimer, execute the `slimer` command and provide the necessary arguments:
 
 ```bash
 slimer /path/to/directory -c -l 500 -e __pycache__ temp
