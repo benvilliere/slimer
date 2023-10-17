@@ -6,7 +6,7 @@ on:
 
 jobs:
   publish-package:
-    name: Code Checks
+    name: Publish Package
     runs-on: ubuntu-latest
 
     steps:
