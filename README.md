@@ -1,5 +1,7 @@
 # Slimer
 
+![Code Checks](https://github.com/benvilliere/slimer/actions/workflows/code-checks.yml/badge.svg)
+
 <p align="center">
   <img src="https://github.com/benvilliere/slimer/blob/main/slimer.svg?raw=true" width="320" title="Slimer" alt="Slimer" />
 </p>
